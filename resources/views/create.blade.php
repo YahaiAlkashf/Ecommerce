@@ -263,20 +263,29 @@
             </li>
         </ul>
     </div>
+    @if ($errors->any())
+    <div class="alert alert-danger">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
-
-    <form action="{{route('pruducts.store')}}" method="POST">
+    <form action="{{route('pruducts.store')}}" method="POST" enctype="multipart/form-data">
         @csrf
         <div class="create-pruduct">
             <h2>add product</h2>
-            <input type="text"  class="file" placeholder="name" >
-            <input type="text"  class="file" placeholder="price" >
-            <textarea type="text"  class="file" placeholder="description" style=" resize: none;    width: 100%;
+            <input type="text"  class="file" placeholder="name"  name="name">
+            <input type="text"  class="file" placeholder="price"  name="price">
+            <input type="text"  class="file" placeholder="count"  name="count">
+            <textarea type="text"  name="description" class="file" placeholder="description" style=" resize: none;    width: 100%;
             max-width: 400px;
             height: 200px;
             padding: 15px;
             font-size: 18px;"></textarea>
-            <input type="file" id="photo" class="file-image">
+            <input type="file" id="photo" class="file-image" name="image">
             <button>create</button>
             
         </div>

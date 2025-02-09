@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    @yield('style')
-   
+    <link rel="stylesheet" href="{{asset('css/create.css')}}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
@@ -149,42 +148,46 @@
         background-color: yellow;
         color: black;
     }
-        .card{
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            width:100%;
-            gap:5px;
-            max-height: 85px;
-        }
-        .card  a,.card  button{
-        text-decoration: none;
-        padding: 8px;
-        transition: all 0.3s ease;
+    .card{
         display: flex;
-        align-items: center;
-        flex-grow: 1;
+        flex-wrap: wrap;
         justify-content: center;
-        outline:none;
-        border:none;
-        height: 90%;
-        cursor: pointer;
-        }
-        .card .edit{
-            background-color: #28a745;
-            border-radius: 8px;
-        }
-        .card .edit:hover{
-            background-color:#218838;
-        }
-        .card .delete{
-            background-color: #ff4d4d;
-            border-radius: 8px;
-        }
-        .card .delete:hover{
-            background-color:#cc0000;
-        }
+        align-items: center;
+        
+        gap:5px;
+        max-height: 85px;
+    }
+    .card  a{
+      text-decoration: none;
+      padding: 8px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      height: 20px;
+      flex-grow: 1;
+     justify-content: center;
+    }
+    .card .view{
+        background-color: #0481FF;
+        border-radius: 8px;
+    }
+    .card .view:hover{
+        background-color: #0266cc;
+    }
+    .card .edit{
+        background-color: #28a745;
+        border-radius: 8px;
+    }
+    .card .edit:hover{
+        background-color:#218838;
+    }
+    .card .delete{
+        background-color: #ff4d4d;
+        border-radius: 8px;
+    }
+    .card .delete:hover{
+        background-color:#cc0000;
+    }
     .create{
         text-align: center;
         margin: 15px 0;
@@ -207,7 +210,7 @@
   </style>
 </head>
 <body>
-    
+    <div class="page">
     <div class="menu">
         <ul>
             <li class="profile"> 
@@ -260,7 +263,35 @@
             </li>
         </ul>
     </div>
-    @yield('contant')
+    @if ($errors->any())
+    <div class="alert alert-danger">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+    <form action="{{route('products.update',$product->id)}}" method="POST" enctype="multipart/form-data">
+        @csrf
+        @method('put')
+        <div class="create-pruduct">
+            <h2>add product</h2>
+            <input type="text"  class="file" placeholder="name"  name="name"   value="{{$product->name}}">
+            <input type="text"  class="file" placeholder="price"  name="price" value="{{$product->price}}">
+            <input type="text"  class="file" placeholder="count"  name="count" value="{{$product->count}}">
+            <textarea type="text"  name="description" class="file" placeholder="description" style=" resize: none;    width: 100%;
+            max-width: 400px;
+            height: 200px;
+            padding: 15px;
+            font-size: 18px;">{{$product->description}}</textarea>
+            <input type="file" id="photo" class="file-image" name="image">
+            <button >Edit</button>
+            
+        </div>
+        </form>
+        </div>
 </tbody>
 </table>
 </div>

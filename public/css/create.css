@@ -1,13 +1,9 @@
-
-
-
 .page{
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 900px;
 }
-
 
 .create-pruduct{
 background-color: white;
@@ -56,6 +52,7 @@ h2{
     position: relative;
     cursor: pointer;
     border: 1px solid #123;
+    transition: .5s;
 }
 .create-pruduct button:hover{
     background-color: #0266cc;

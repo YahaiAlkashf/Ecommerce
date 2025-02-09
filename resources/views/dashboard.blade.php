@@ -59,16 +59,24 @@
             </tr>
         </thead>
         <tbody>
+            @foreach ($Products as $Product)
             <tr>
-                <td class="record">smart watch</td>
-                <td class="record"><span class="price">30$</span></td>
-                <td class="record"><span class="count">60</span></td>
+                    
+                
+                <td class="record">{{$Product->name}}</td>
+                <td class="record"><span class="price">{{$Product->price}}</span></td>
+                <td class="record"><span class="count">{{$Product->count}}</span></td>
                 <td class="card">
-                    <a href="#" class="view">View</a>
-                    <a href="#" class="edit">Edit</a>
-                    <a href="#" class="delete">delete</a>
+                    {{-- <a href="#" class="view">View</a> --}}
+                    <a href="{{route('pruducts.edit',$Product->id)}}" class="edit">Edit</a>
+                    <form action="{{route('products.delete',$Product->id)}}" method="POST">
+                        @csrf
+                        @method('delete')
+                    <button  class="delete">delete</button>
+                    </form>
                 </td>
             </tr>
+            @endforeach
 
 
 @endsection
