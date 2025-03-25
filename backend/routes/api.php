@@ -15,6 +15,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/csrf-token',function(){
   return  response()->json(['token'=>csrf_token()]);
 });
+Route::middleware(['auth:sanctum','CheckUser'])->get('/check-role',[authcontroller::class,'chechRole']);
 Route::post('/login',[AuthController::class,'login']);
 
 
@@ -43,4 +44,5 @@ Route::get('/categories/{category}/edit',[CategoryController::class,'edit']);
 Route::get('/orders',[OrderController::class,'index']);
 Route::post('/orders/create',[OrderController::class,'store']);
 Route::patch('/orders/{order}/update', [OrderController::class, 'update']);
+
 

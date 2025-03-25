@@ -12,7 +12,7 @@ class authcontroller extends Controller
 {
     public function register(Request $request){
 
-        
+
        $validator=Validator::make($request->all(),[
             'name'=>'required|string',
             'email'=>'required|email',
@@ -28,7 +28,7 @@ class authcontroller extends Controller
             'email'=>$request->email,
             'password'=> Hash::make($request->password),
         ]);
-     
+
         $token = $user->createToken('auth_token')->plainTextToken ?? null;
 
             if (!$token) {
@@ -36,7 +36,7 @@ class authcontroller extends Controller
             }
 
             return response()->json(['message' => 'تم التسجيل بنجاح', 'token' => $token, 'user' => $user], 201);
-        
+
     }
 
 
@@ -62,5 +62,11 @@ class authcontroller extends Controller
                 'message'=>'المستخدم غير مسجل دخول',
             ],401);
         }
+    }
+
+    public function chechRole(Request $request){
+        return response()->json([
+            'role'=>Auth::user()->role
+        ]);
     }
 }
