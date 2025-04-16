@@ -16,7 +16,7 @@ class OrderController extends Controller
                 $imageQuery->select('product_id', 'image_url')->limit(1);
             }]);
         }])->get();
-    
+
         return response()->json(['orders' => $orders], 200);
     }
 
@@ -30,9 +30,9 @@ class OrderController extends Controller
                 'address'=>'required|string',
                 'products'=>'required|array',
                 'products.*.id'=>'exists:products,id',
-                
+
             ]);
-    
+
            $order= Order::create([
                 'name'=>$request->name,
                 'status'=>'pending',
@@ -41,22 +41,22 @@ class OrderController extends Controller
                 'alternative_phone'=>$request->alternativePhone,
                 'payment_method'=>"عند الاستلام",
                 'total_price'=>0
-    
+
             ]);
-    
+
             $tolal_price=0;
             foreach($request->products as $product){
                 $order->products()->attach($product['id']);
                 $productPrice=Product::find($product['id'])->price;
                 $tolal_price+= $productPrice * 1;
             }
-    
-    
+
+
             $order->update([
                 'total_price'=>$tolal_price
             ]);
-    
-    
+
+
             return response()->json([
                 'status'=>true,
                 'message'=>'تم ارسال الطلب بنجاح',
@@ -73,12 +73,12 @@ class OrderController extends Controller
     }
 
 
-    
+
     public function update(Request $request ,$orderId){
             $request->validate([
                 'status'=>['required',Rule::in(['pending','Confirmed','Delivered'])]
             ]);
-            
+
             $order=Order::find($orderId);
             if(!$order){
                 return response()->json([

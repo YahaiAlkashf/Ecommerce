@@ -6,6 +6,9 @@ use App\Models\Product;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+
+use function Pest\Laravel\json;
+
 class ProductController extends Controller
 {
 
@@ -31,7 +34,7 @@ class ProductController extends Controller
                     'category'=>'required|exists:categories,id',
                     'images.*' => 'mimes:jpeg,png,jpg,gif',
             ]);
-            
+
              $product=Product::create([
                     'name'=>$request->name,
                     'description'=>$request->description,
@@ -44,7 +47,7 @@ class ProductController extends Controller
                 if($request->hasFile('images')){
                     $images=$request->file('images');
                     $imagepath=[];
-        
+
                     foreach($images as $image ){
                         $path=$image->store('product_image','public');
                         ProductImage::create([
@@ -70,16 +73,16 @@ class ProductController extends Controller
                     'message'=>'المنتج غير موجود'
                 ]);
             }
-    
+
             $images=ProductImage::where('product_id',$productId)->get();
-    
+
             foreach($images as $image){
                 Storage::disk('public')->delete($image->image_path);
                 $image->delete();
             }
-    
+
             $product->delete();
-    
+
             return response()->json([
                 'status'=>true,
                 'message'=>'تم الحذف بنجاح'
@@ -88,7 +91,7 @@ class ProductController extends Controller
             return response()->json([
                 'status'=>false,
                 'message'=>$e->getMessage()
-            ]);  
+            ]);
         }
 
 
@@ -127,7 +130,7 @@ class ProductController extends Controller
 
             if($request->hasFile('images')){
                 $oldImages=ProductImage::where('product_id',$productId)->get();
-                
+
                 foreach($oldImages as $oldImage){
                     Storage::disk('public')->delete($oldImage->image_path);
                     $oldImage->delete();
@@ -135,7 +138,7 @@ class ProductController extends Controller
 
                 $images=$request->file('images');
                 $imagepath=[];
-    
+
                 foreach($images as $image ){
                     $path=$image->store('product_image','public');
                     ProductImage::create([
@@ -150,5 +153,8 @@ class ProductController extends Controller
 
     }
 
+    public function singleProduct($id){
+
+    }
 
 }

@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    
+
     public function index(){
       $allCategory=Category::withCount('products')->get();
       return response()->json([
@@ -17,37 +17,38 @@ class CategoryController extends Controller
 
 
     public function store(Request $request){
+
         $request->validate([
             'name' => 'required|string',
-            'image' => 'mimes:jpeg,png,jpg,gif' 
         ]);
-    
- 
+
+
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('categories', 'public'); 
-           
+            $imagePath = $request->file('image')->store('categories', 'public');
+
         } else {
             return response()->json([
                 'status' => false,
                 'message' => 'الصورة غير مرفقة'
             ], 400);
         }
-    
+
+
         $category = Category::create([
             'name' => $request->name,
             'image_path' => $imagePath
         ]);
-    
+
         return response()->json([
             'status' => true,
-            'category' => $category 
+            'category' => $category
         ]);
     }
 
     public function destroy($id)
     {
         $category = Category::findOrFail($id);
-    
+
         // التأكد من عدم وجود منتجات مرتبطة بالقسم قبل الحذف
         if ($category->products()->exists()) {
             return response()->json([
@@ -55,16 +56,16 @@ class CategoryController extends Controller
                 'message' => 'لا يمكن حذف القسم لأنه يحتوي على منتجات'
             ], 400);
         }
-    
+
         try {
             // حذف الصورة المرتبطة بالقسم إذا كانت موجودة
             if ($category->image_path) {
                 Storage::disk('public')->delete($category->image_path);
             }
-    
+
             // حذف القسم من قاعدة البيانات
             $category->delete();
-    
+
             return response()->json([
                 'status' => true,
                 'message' => 'تم حذف القسم بنجاح'
@@ -76,7 +77,7 @@ class CategoryController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
-    }  
+    }
 
 public function edit($id){
     $category=Category::findorfail($id);
@@ -84,6 +85,8 @@ public function edit($id){
         'category'=>$category
     ]);
 }
+
+
 public function update(Request $request, $id) {
     $request->validate([
         'name' => 'required|string',
@@ -98,7 +101,7 @@ public function update(Request $request, $id) {
     }
     $category->name = $request->name;
     if ($request->hasFile('image')) {
-       
+
         if ($category->image_path) {
             Storage::disk('public')->delete($category->image_path);
         }
@@ -107,7 +110,7 @@ public function update(Request $request, $id) {
         $category->image_path = $imagePath;
     }
 
-    
+
     $category->save();
 
     return response()->json([

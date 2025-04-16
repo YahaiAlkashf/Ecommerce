@@ -15,9 +15,9 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/csrf-token',function(){
   return  response()->json(['token'=>csrf_token()]);
 });
-Route::middleware(['auth:sanctum','CheckUser'])->get('/check-role',[authcontroller::class,'chechRole']);
+Route::middleware('auth:sanctum')->get('/checkrole',[authcontroller::class,'checkRole']);
 Route::post('/login',[AuthController::class,'login']);
-
+Route::get('/logout',[authcontroller::class,'logout']);
 
 
 Route::get('/products',[ProductController::class,'index']);
@@ -25,6 +25,7 @@ Route::post('/products/create',[ProductController::class,'store']);
 Route::get('product/{id}/edit',[ProductController::class,'edit']);
 Route::post('product/{id}/update',[ProductController::class,'update']);
 Route::delete('product/{id}',[ProductController::class,'destroy']);
+Route::get("/products/{id}",[ProductController::class,'singleProduct']);
 
 
 
@@ -43,6 +44,6 @@ Route::get('/categories/{category}/edit',[CategoryController::class,'edit']);
 
 Route::get('/orders',[OrderController::class,'index']);
 Route::post('/orders/create',[OrderController::class,'store']);
-Route::patch('/orders/{order}/update', [OrderController::class, 'update']);
+Route::put('/orders/{order}/update', [OrderController::class, 'update']);
 
 

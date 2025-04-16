@@ -35,7 +35,7 @@ class authcontroller extends Controller
                 return response()->json(['error' => 'فشل في إنشاء التوكن'], 500);
             }
 
-            return response()->json(['message' => 'تم التسجيل بنجاح', 'token' => $token, 'user' => $user], 201);
+            return response()->json(['message' => 'تم التسجيل بنجاح','token'=>$token, 'role'=>$user->role, 'user' => $user], 200);
 
     }
 
@@ -53,9 +53,10 @@ class authcontroller extends Controller
             $user = User::where('email', $request->email)->first();
             $token = $user->createToken('auth_token')->plainTextToken;
             return response()->json([
+                'role'=> $user->role,
+                'message'=>'تم ستجيل الدخول',
                 'token'=>$token,
-                'message'=>'تم ستجيل الدخول'
-            ],200);
+            ],200)->cookie('token',$token,60*60*7,'/',null,true,true);
         }
         else{
             return response()->json([
@@ -64,9 +65,18 @@ class authcontroller extends Controller
         }
     }
 
-    public function chechRole(Request $request){
+    public function checkRole(Request $request) {
         return response()->json([
-            'role'=>Auth::user()->role
-        ]);
+            'status' =>true,
+            'role' => $request->user()->role,
+        ], 200);
+    }
+
+
+    public function logout(Request $request){
+        Auth::logout();
+       return response()->json([
+            'status'=>true,
+        ],200);
     }
 }
