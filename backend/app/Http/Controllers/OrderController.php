@@ -1,6 +1,9 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use App\Http\Requests\StoreOrdereReqest;
+use App\Http\Requests\UpdateOrdereRequest;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -9,8 +12,7 @@ use Illuminate\Validation\Rule;
 class OrderController extends Controller
 {
 
-    public function index()
-    {
+    public function index(){
         $orders = Order::with(['products' => function ($query) {
             $query->with(['images' => function ($imageQuery) {
                 $imageQuery->select('product_id', 'image_url')->limit(1);
@@ -21,17 +23,9 @@ class OrderController extends Controller
     }
 
 
-    public function store(Request $request)
-    {
-        try{
-            $request->validate([
-                'name'=>'required|string',
-                'phone'=>'required|numeric',
-                'address'=>'required|string',
-                'products'=>'required|array',
-                'products.*.id'=>'exists:products,id',
+    public function store(StoreOrdereReqest $request){
 
-            ]);
+        $validator =$request->validated();
 
            $order= Order::create([
                 'name'=>$request->name,
@@ -39,9 +33,9 @@ class OrderController extends Controller
                 'phone'=>$request->phone,
                 'address'=>$request->address,
                 'alternative_phone'=>$request->alternativePhone,
-                'payment_method'=>"عند الاستلام",
+                'payment_method'=>"OnDlivered",
+                'user_id'=>$request->user_id,
                 'total_price'=>0
-
             ]);
 
             $tolal_price=0;
@@ -50,8 +44,6 @@ class OrderController extends Controller
                 $productPrice=Product::find($product['id'])->price;
                 $tolal_price+= $productPrice * 1;
             }
-
-
             $order->update([
                 'total_price'=>$tolal_price
             ]);
@@ -59,41 +51,16 @@ class OrderController extends Controller
 
             return response()->json([
                 'status'=>true,
-                'message'=>'تم ارسال الطلب بنجاح',
             ]);
-
-        }catch(\Exception $e){
-            return response()->json([
-                'status'=>false,
-                'message'=>$e->getMessage(),
-            ]);
-        }
-
-
     }
 
-
-
-    public function update(Request $request ,$orderId){
-            $request->validate([
-                'status'=>['required',Rule::in(['pending','Confirmed','Delivered'])]
-            ]);
-
-            $order=Order::find($orderId);
-            if(!$order){
-                return response()->json([
-                    'status'=>false,
-                ],400);
-            }
-
-            $order->update([
-                'status'=>$request->status,
-            ]);
-
-            return response()->json([
-                'status'=>true,
-            ],200);
-
+    public function update(UpdateOrdereRequest $request , Order $order){
+        $validator = $request->validated();
+        $order->update($validator);
+        return response()->json([
+            'status' => true,
+            'data' => $order
+        ], 200);
     }
 
 }

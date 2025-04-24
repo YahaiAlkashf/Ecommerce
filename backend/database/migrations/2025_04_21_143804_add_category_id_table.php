@@ -12,12 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('products', function (Blueprint $table) {
-            
-            $table->unsignedBigInteger('category_id'); 
-            $table->unsignedBigInteger('order_id')->nullable(); 
-            $table->foreign('category_id')->references('id')->on('categories');
-            $table->foreign('order_id')->references('id')->on('orders');
+        $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
         });
+
     }
 
     /**
@@ -25,8 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('products', function (Blueprint $table) {
-            //
-        });
+        //
     }
 };

@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use App\Http\Requests\StoreMessageReqest;
 use App\Models\Message;
 use Illuminate\Http\Request;
 
@@ -12,31 +14,18 @@ class MessageController extends Controller
             $allMessage=Message::all();
             return response()->json([
                 'allMessage'=>$allMessage,
-            ],200);    
+            ],200);
     }
 
 
-    
-    public function store(Request $request){
 
-        $request->validate([
-            'name'=>'required|string|max:100',
-            'email'=>'required|email',
-            'phone'=>'required|digits_between:10,15',
-            'message'=>'required',
-        ]);
+    public function store(StoreMessageReqest $request){
 
-        Message::create([
-            'name'=>$request->name,
-            'email'=>$request->email,
-            'phone'=>$request->phone,
-            'message'=>$request->message,
-        ]);
-
+      $validator = $request->validated();
+        Message::create($validator);
         return response()->json([
           'status'=>true
-        ],200);
-
+        ],201);
     }
 
 

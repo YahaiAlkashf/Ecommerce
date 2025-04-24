@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use App\Http\Requests\StorProductReuest;
 use App\Models\ProductImage;
 use App\Models\Product;
 use GuzzleHttp\Psr7\Response;
@@ -25,119 +27,88 @@ class ProductController extends Controller
 
     }
 
-    public function store(Request $request){
-         $request->validate([
-                    'name'=>'required',
-                    'description'=>'required',
-                    'price'=>'required',
-                    'rating'=>'required',
-                    'category'=>'required|exists:categories,id',
-                    'images.*' => 'mimes:jpeg,png,jpg,gif',
-            ]);
+    public function store(StorProductReuest $request){
+         $validator=$request->validated();
+         try{
+                $mianpath=$request->file('mainImage')->store('product_image','public');
 
-             $product=Product::create([
-                    'name'=>$request->name,
-                    'description'=>$request->description,
-                    'price'=>$request->price,
-                    'rating'=>$request->rating,
-                    'category_id'=>$request->category,
-                ]);
-
-
+                $validator['mainImage']= $mianpath;
+                $product=Product::create($validator);
                 if($request->hasFile('images')){
                     $images=$request->file('images');
-                    $imagepath=[];
-
                     foreach($images as $image ){
                         $path=$image->store('product_image','public');
                         ProductImage::create([
                             'product_id' => $product->id,
-                            'image_path' => $path,
+                            'productImage' => $path,
                         ]);
                     }
                 }
+
                 return response()->json([
-                    'message'=>'تم انشاء المنتج',
                     'status'=>true
                 ],201);
-
-
+         }catch(\Exception $e){
+            return response()->json($e);
+         }
     }
+
+
+
 
     public function destroy($productId){
         try{
             $product=Product::find($productId);
-
             if(!$product){
                 return response()->json([
-                    'message'=>'المنتج غير موجود'
+                    'message'=>' invaild product '
                 ]);
             }
-
             $images=ProductImage::where('product_id',$productId)->get();
-
             foreach($images as $image){
-                Storage::disk('public')->delete($image->image_path);
+                Storage::disk('public')->delete($image->productImage);
                 $image->delete();
             }
-
             $product->delete();
-
             return response()->json([
                 'status'=>true,
-                'message'=>'تم الحذف بنجاح'
-            ]);
+            ],204);
+
         }catch(\Exception $e){
             return response()->json([
                 'status'=>false,
-                'message'=>$e->getMessage()
+                'message'=>$e
             ]);
         }
-
-
-
     }
 
-        public function edit($productId){
-
+        public function show($productId){
             $product=Product::with('images')->find($productId);
-
             return response()->json([
                 'product'=>$product
             ]);
         }
 
 
-    public function update(Request $request,$productId){
-            $request->validate([
-                'name'=>'required',
-                'description'=>'required',
-                'price'=>'required',
-                'rating'=>'required',
-                'category'=>'required|exists:categories,id',
-                'images.*' => 'mimes:jpeg,png,jpg,gif',
-             ]);
+    public function update(StorProductReuest $request,$productId){
+            $validator=$request->validated();
 
-             $product=Product::findorFail($productId);
+             $product=Product::findOrFail($productId);
 
-             $product->update([
-                'name'=>$request->name,
-                'description'=>$request->description,
-                'price'=>$request->price,
-                'rating'=>$request->rating,
-                'category_id'=>$request->category,
-            ]);
-
+             if($request->hasFile('mainImage')){
+                $mainImagePath=$request->file('mainImage')->store('product_image','public');
+                $validator['mainImage']=$mainImagePath;
+             }
+             $product->update($validator);
             if($request->hasFile('images')){
                 $oldImages=ProductImage::where('product_id',$productId)->get();
 
                 foreach($oldImages as $oldImage){
-                    Storage::disk('public')->delete($oldImage->image_path);
+                    Storage::disk('public')->delete($oldImage->productImage);
                     $oldImage->delete();
                 }
 
                 $images=$request->file('images');
-                $imagepath=[];
 
                 foreach($images as $image ){
                     $path=$image->store('product_image','public');
@@ -148,13 +119,16 @@ class ProductController extends Controller
                 }
             }
             return response()->json([
-                    'message'=>'تم التعديل بنجاح'
-            ]);
+                'status'=>true
+            ],201);
 
     }
 
-    public function singleProduct($id){
-
+    public function search(Request $request){
+            $query=$request->input('query');
+            $products=Product::where('name','LIKE',"%{$query}%")
+                               ->orwhere('description','LIKE',"%{$query}")
+                               ->get();
+           return response($products)->json();
     }
-
 }

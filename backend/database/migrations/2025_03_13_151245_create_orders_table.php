@@ -15,9 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->enum('status', ['pending', 'completed', 'cancelled'])->default('pending');
-            $table->string('payment_method');
+            $table->string('payment_method')->nullable();
             $table->string('phone',15);
             $table->string('alternative_phone',15)->nullable();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->text('address');
             $table->timestamps();
         });
