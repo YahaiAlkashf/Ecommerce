@@ -1,18 +1,32 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Authcontroller;
-use App\Http\Controllers\SocialController;
 use App\Models\User;
-use Illuminate\Container\Attributes\Auth;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Str;
-Route::get('/', function () {
-    return ['Laravel' => app()->version()];
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+
+Route::get('/auth/google/redirect',  function (Request $request){
+    return Socialite::driver('google')->redirect();
 });
+Route::get('/auth/google/callback', function (Request $request){
 
-require __DIR__.'/auth.php';
+        $userGoogle = Socialite::driver('google')->stateless()->user();
+        $user=User::where('google_id',$userGoogle->id)->first();
+        if(!$user){
+        $user=User::create([
+            'google_id'=>$userGoogle->id,
+           'name'=>$userGoogle->name,
+            'email'=>$userGoogle->email,
+            'password'=>Str::random(12)
+            ]
+            );
+        }
+        Auth::login($user);
+        $token = $user->createToken('auth_token')->plainTextToken ;
+        //  return response()->json(['token' => $token]);
+                                            
+        return redirect(env('FRONTEND_URL') .'/login'. '?token=' . $token);
 
-// Route::get('/auth/google',[SocialController::class,'redirectToGoogle']);
-// Route::get('/auth/google/callback',[SocialController::class,'handleGoogleCallback']);
+});

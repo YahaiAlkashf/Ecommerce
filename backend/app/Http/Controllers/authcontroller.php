@@ -2,64 +2,74 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Auth\LoginRequest;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Http\Request;
 use App\Models\User;
-use function Laravel\Prompts\password;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use  App\Http\Requests\RegisterRequset;
-use Laravel\Socialite\Facades\Socialite;
-use Illuminate\Support\Facades\Http;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Str;
-class authcontroller extends Controller
+use Illuminate\Support\Facades\Hash;
+
+class AuthController extends Controller
 {
-     public function register(RegisterRequset $request){
-                    $validator=$request->validated();
-                    $user=User::create($validator);
-                    $token = $user->createToken('auth_token')->plainTextToken ;
-                    return response()->json(['token'=>$token, 'role'=>$user->role, 'user' => $user], 200);
-                }
-
-
-    public function login(LoginRequest $request){
-        $validator=$request->validated();
-        if(Auth::attempt($validator)){
-            $user = User::where('email', $validator['email'])->first();
-            $token = $user->createToken('auth_token')->plainTextToken;
+    public function login(Request $request){
+        try {
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|min:8'
+            ]);
+        } catch(\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'role'=> $user->role,
-                'token'=>$token,
-            ],200)->cookie('token',$token,60*60*7,'/',null,true,true);
+                'status' => false,
+                'errors' => $e->errors()
+            ], 422);
         }
-        else{
+    
+        $email = $request->email;
+        $password = $request->password;
+    
+        if (Auth::attempt(['email' => $email, 'password' => $password])) {
+            $user = Auth::user();
+            $token = $user->createToken("auth-token")->plainTextToken;
             return response()->json([
-                'message'=>' email or password invalid',
-            ],401);
+                'status' => true,
+                'token' => $token,
+                'role'=>$user->role
+            ], 200);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Invalid credentials'
+            ], 401);
         }
     }
-
-    public function checkRole(Request $request) {
+    public function register(Request $request){
+             $request->validate([
+                'name'=>'required',
+                'email' => 'required|email',
+                'password' => 'required|min:8|confirmed'
+            ]);
+       
+        $user= User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => $request->password
+        ]);
+        $token = $user->createToken("auth-token")->plainTextToken;
         return response()->json([
-            'status' =>true,
-            'role' => $request->user()->role,
-        ], 200);
+            'status'=>true,
+            'token'=>$token,
+            'user'=>$user
+        ],201);
+        
+    }
+
+    public function user(Request $request){
+        return response()->json($request->user());
     }
 
 
     public function logout(Request $request){
         $request->user()->currentAccessToken()->delete();
-       return response()->json([
-            'status'=>true,
-        ],200);
+        return response()->json([
+            'message'=>'logout seccess',
+        ]);
     }
-
-
-
-
-
- 
-
 }

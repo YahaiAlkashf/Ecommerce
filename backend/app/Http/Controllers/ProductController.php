@@ -2,133 +2,153 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StorProductReuest;
-use App\Models\ProductImage;
+use App\Models\ImageProduct;
 use App\Models\Product;
-use GuzzleHttp\Psr7\Response;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-
-use function Pest\Laravel\json;
+use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-
-    public function index(){
-        try {
-            $allProduct=Product::with('images')->get();
-            return response()->json(['products'=>$allProduct]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status'=>false,
-                'message'=>$e->getMessage()
-            ]);
-        }
-
+    public function index()
+    {
+        $Products = Product::with('ImagesProducts', 'category:id,name')->get();
+        return response()->json([
+            'products' => $Products
+        ], 200);
     }
 
-    public function store(StorProductReuest $request){
-         $validator=$request->validated();
-         try{
-                $mianpath=$request->file('mainImage')->store('product_image','public');
+    public function create(Request $request)
+    {
 
-                $validator['mainImage']= $mianpath;
-                $product=Product::create($validator);
-                if($request->hasFile('images')){
-                    $images=$request->file('images');
-                    foreach($images as $image ){
-                        $path=$image->store('product_image','public');
-                        ProductImage::create([
-                            'product_id' => $product->id,
-                            'productImage' => $path,
-                        ]);
-                    }
-                }
+        $request->validate([
+            'name' => 'required',
+            'description' => 'required',
+            'price' => 'required',
+            'rating' => 'nullable',
+            'category_id' => 'required|exists:categories,id',
+            'main_image' => 'image|required|mimes:jpeg,png,jpg,gif|max:2048',
+            'images.*' => 'image|nullable|mimes:jpeg,png,jpg,gif',
+        ]);
 
-                return response()->json([
-                    'status'=>true
-                ],201);
-         }catch(\Exception $e){
-            return response()->json($e);
-         }
-    }
+        $imagePath = $request->file('main_image')->store('products', 'public');
+        $product = Product::create([
+            'name' => $request->name,
+            'description' => $request->description,
+            'price' => $request->price,
+            'rating' => $request->rating,
+            'category_id' => $request->category_id,
+            'main_image' => $imagePath,
+        ]);
+        if ($request->hasFile('images')) {
 
+            $images = $request->file('images');
+            foreach ($images as $image) {
 
+                $path = $image->store('products', 'public');
 
-
-    public function destroy($productId){
-        try{
-            $product=Product::find($productId);
-            if(!$product){
-                return response()->json([
-                    'message'=>' invaild product '
+                ImageProduct::create([
+                    'product_id' => $product->id,
+                    'image' => $path
                 ]);
             }
-            $images=ProductImage::where('product_id',$productId)->get();
-            foreach($images as $image){
-                Storage::disk('public')->delete($image->productImage);
-                $image->delete();
+        }
+        return response()->json([
+            'message' => "Success Create Product"
+        ], 200);
+    }
+
+
+    public function show($id)
+    {
+        $product = Product::with('ImagesProducts')->find($id);
+        return response()->json([
+            'product' => $product
+        ], 200);
+    }
+
+
+    public function update(Request $request, $id)
+    {
+
+        $request->validate([
+            'name' => 'required',
+            'description' => 'required',
+            'price' => 'required',
+            'rating' => 'nullable',
+            'category_id' => 'required|exists:categories,id',
+            'main_image' => 'image|nullable|image|mimes:jpeg,png,jpg,gif',
+            'images.*' => 'image|nullable|mimes:jpeg,png,jpg,gif'
+        ]);
+        $product = Product::findOrFail($id);
+        if ($request->hasFile('main_image')) {
+            $imagePath = $request->file('main_image')->store('products', 'public');
+            $product->update([
+                'name' => $request->name,
+                'description' => $request->description,
+                'price' => $request->price,
+                'rating' => $request->rating,
+                'category_id' => $request->category_id,
+                'main_image' => $imagePath,
+            ]);
+        } else {
+            $product->update([
+                'name' => $request->name,
+                'description' => $request->description,
+                'price' => $request->price,
+                'rating' => $request->rating,
+                'category_id' => $request->category_id,
+            ]);
+        }
+
+        if ($request->hasFile('images')) {
+            ImageProduct::where('product_id', $id)->delete();
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('products', 'public');
+                $ImageProduct = ImageProduct::where('product_id', $id);
+                $ImageProduct->update([
+                    'product_id' => $product->id,
+                    'image' => $path
+                ]);
             }
+        }
+        return response()->json([
+            'message' => "Success Update Product"
+        ], 200);
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $product = Product::findOrFail($id);
+            $images = ImageProduct::where('product_id', $id)->get();
+            foreach ($images as $image) {
+                Storage::disk('public')->delete($image->image);
+                // $image->delete();
+            }
+            $images = ImageProduct::where('product_id', $id)->delete();
+            Storage::disk('public')->delete($product->main_image);
             $product->delete();
             return response()->json([
-                'status'=>true,
-            ],204);
+                'message' => "Product deleted successfully"
+            ], 200);
+        } catch (\Exception  $e) {
+            return response()->json($e);
+        }
+    }
 
+    public function search(Request $request)
+    {
+        try{
+        $query = $request->query->get('query');
+
+            $products = Product::with('category:id,name')->where('name', 'LIKE', "%{$query}%")
+                ->orWhere('description', 'LIKE', "%{$query}%")
+                ->get();
+            return response()->json(['products'=>$products]);
         }catch(\Exception $e){
-            return response()->json([
-                'status'=>false,
-                'message'=>$e
-            ]);
-        }
-    }
-
-        public function show($productId){
-            $product=Product::with('images')->find($productId);
-            return response()->json([
-                'product'=>$product
-            ]);
+            return response()->json($e);
         }
 
 
-    public function update(StorProductReuest $request,$productId){
-            $validator=$request->validated();
-
-             $product=Product::findOrFail($productId);
-
-             if($request->hasFile('mainImage')){
-                $mainImagePath=$request->file('mainImage')->store('product_image','public');
-                $validator['mainImage']=$mainImagePath;
-             }
-             $product->update($validator);
-            if($request->hasFile('images')){
-                $oldImages=ProductImage::where('product_id',$productId)->get();
-
-                foreach($oldImages as $oldImage){
-                    Storage::disk('public')->delete($oldImage->productImage);
-                    $oldImage->delete();
-                }
-
-                $images=$request->file('images');
-
-                foreach($images as $image ){
-                    $path=$image->store('product_image','public');
-                    ProductImage::create([
-                        'product_id' => $productId,
-                        'image_path' => $path,
-                    ]);
-                }
-            }
-            return response()->json([
-                'status'=>true
-            ],201);
-
-    }
-
-    public function search(Request $request){
-            $query=$request->input('query');
-            $products=Product::where('name','LIKE',"%{$query}%")
-                               ->orwhere('description','LIKE',"%{$query}")
-                               ->get();
-           return response($products)->json();
     }
 }

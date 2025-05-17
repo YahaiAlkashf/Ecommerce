@@ -2,75 +2,81 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreCategoryRequest;
-use App\Http\Requests\UpdateCategoryRequest;
-use Illuminate\Support\Facades\Storage;
-use App\Models\Category;
 use Illuminate\Http\Request;
-
+use App\Models\Category;
+use Illuminate\Support\Facades\Storage;
 class CategoryController extends Controller
 {
-
-    public function index(){
-      $allCategory=Category::withCount('products')->get();
-      return response()->json([
-        'allCategory'=>$allCategory
-      ]);
-    }
-
-
-    public function store(StoreCategoryRequest $request){
-
-        $validator = $request->validated();
-        try{
-
-             $imagePath = $request->file('image')->store('categories', 'public');
-             Category::create([
-                'name'=>$validator['name'],
-                'image'=>$imagePath
-             ]);
-            return response()->json([
-                'status' => true,
-            ],201);
-        }catch(\Exception $e){
-            return response()->json($e);
-        }
-
-    }
-
-    public function destroy($id)
+    public function index()
     {
-        $category = Category::findOrFail($id);
-            if ($category->image) {
-                Storage::disk('public')->delete($category->image);
-            }
-            $category->delete();
-            return response()->json([
-                'status' => true,
-            ], 204);
+        $categories = Category::all();
+        return response()->json([
+            'categories' => $categories
+        ], 200);
     }
 
-   public function show($id){
-        $category=Category::findOrFail($id);
-        return response()->json([
-            'category'=>$category
-        ]);
-   }
-
-
-    public function update(UpdateCategoryRequest $request,$id) {
-    $validator = $request->validated();
-
-        $category = Category::findOrFail($id);
-        $category->name = $validator['name'];
-        if ($request->hasFile('image')){
-        Storage::disk('public')->delete($category['image']);
-            $imagePath = $request->file('image')->store('categories', 'public');
-            $category->image = $imagePath;
+    public function create(Request $request)
+    {
+        try {
+            $request->validate([
+                'name' => 'required',
+                'image' => 'required|image|mimes:jpeg,png,jpg,gif'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => false,
+                'errors' => $e->errors()
+            ], 422);
         }
-        $category->save();
+        $imagePath = $request->file('image')->store('categories', 'public');
+        $caterory = Category::create([
+            'name' => $request->name,
+            'image' => $imagePath
+        ]);
         return response()->json([
-            'status' => 'true'
-        ],201);
+            'message' => "success create category"
+        ], 200);
+    }
+
+    public function show($id)
+    {
+        $category = Category::where('id', $id)->first();
+        return response()->json([
+            'category' => $category
+        ], 200);
+    }
+    public function update(Request $request,$id)
+    {
+
+            $request->validate([
+                'name' => 'required',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif'
+            ]);
+
+        $category = Category::where('id', $id)->first();
+        if ($request->image) {
+            $imagePath = $request->file('image')->store('categories', 'public');
+            $category->update([
+                'name' => $request->name,
+                'image' => $imagePath
+            ]);
+        }else{
+            $category->update([
+                'name' => $request->name,
+            ]);
+        }
+
+        return response()->json([
+            'message' => "success update category"
+        ], 200);
+
+    }
+
+    public function destroy($id) {
+        $category = Category::where('id', $id)->first();
+        $category->delete();
+        return response()->json([
+            'message' => "seccessfuly"
+        ], 200);
     }
 }

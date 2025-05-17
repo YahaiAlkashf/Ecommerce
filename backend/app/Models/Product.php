@@ -1,30 +1,26 @@
 <?php
 
 namespace App\Models;
-use App\Models\Order;
+
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 
 class Product extends Model
 {
-    use HasFactory, Notifiable,HasApiTokens;
-    protected $fillable=[
+    protected $fillable = [
         'name',
         'description',
-        'price',
         'rating',
+        'main_image',
         'category_id',
-        'mainImage',
-
+        'price'
     ];
-
-    public function Orders(){
-       return $this->belongsToMany(Order::class);
+    public function category(){
+        return $this->belongsTo(Category::class);
     }
-    public function images(){
-        return $this->hasMany(ProductImage::class);
+    public function orders(){
+        return $this->belongsToMany(Order::class,'product_order');
+    }
+    public function ImagesProducts(){
+        return $this->hasMany(ImageProduct::class);
     }
 }
